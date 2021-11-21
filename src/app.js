@@ -3,6 +3,10 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import {VRButton} from "three/examples/jsm/webxr/VRButton"
 import {BoxLineGeometry} from "three/examples/jsm/geometries/BoxLineGeometry"
 
+import officeChairGlb from "/assets/office-chair.glb"
+import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
+
+
 class App {
   constructor() {
     const container = document.createElement('div')
@@ -13,7 +17,7 @@ class App {
     // this.camera.position.set(0, 0, 4)
     this.camera = new THREE.PerspectiveCamera(50,
         window.innerWidth / window.innerHeight, 0.1, 100)
-    this.camera.position.set( 1, 1.6, 3 )
+    this.camera.position.set( 0.1, 1.6, 3 )
 
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x505050)
@@ -40,6 +44,7 @@ class App {
 
     // this.initSceneCube()
     this.initScene()
+    this.loadGltf()
     this.setupVR()
 
     this.renderer.setAnimationLoop(this.render.bind(this))
@@ -90,6 +95,30 @@ class App {
       this.room.add(objects)
 
     }
+  }
+
+  loadGltf() {
+    const self = this
+    const loader = new GLTFLoader()
+    loader.load(
+        officeChairGlb,
+        (gltf) => {
+          self.chair = gltf.scene
+          self.chair.scale.set(.2,.2,.2)
+          // self.chair.scale = new THREE.Vector3(.2,.2,.2)
+          self.scene.add(gltf.scene)
+          // self.loadingBar.visible = false
+          self.renderer.setAnimationLoop(self.render.bind(self))
+        },
+        null,
+        // (xhr) => {
+        //   self.loadingBar.progress = xhr.loaded/xhr.total
+        // },
+
+        err => {
+          console.error(`An error happened: ${err}`)
+        }
+    )
   }
 
   setupVR() {
