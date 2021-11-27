@@ -8,7 +8,6 @@
     "build-dev": "webpack --config webpack.config.js --mode development",
     "start-https": "npx http-server -S -C cert.pem dist",
     "start": "npx serve dist",
-    "start-https": "npx http-server -S -C cert.pem dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

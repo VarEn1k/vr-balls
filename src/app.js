@@ -3,7 +3,7 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import {VRButton} from "three/examples/jsm/webxr/VRButton"
 import {BoxLineGeometry} from "three/examples/jsm/geometries/BoxLineGeometry"
 
-import officeChairGlb from "/assets/office-chair.glb"
+import officeChairGlb from "/assets/Cute Cartoon Character.glb"
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 
 
@@ -84,7 +84,7 @@ class App {
 
     const geometry = new THREE.IcosahedronBufferGeometry(this.radius, 2)
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 0; i++) {
 
       const objects = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff } ))
 
@@ -104,11 +104,14 @@ class App {
         officeChairGlb,
         (gltf) => {
           self.chair = gltf.scene
-          self.chair.scale.set(.2,.2,.2)
+          self.chair.scale.set(.4,.4,.4)
+          //self.chair.scale.set(1,1,1)
           // self.chair.scale = new THREE.Vector3(.2,.2,.2)
           self.scene.add(gltf.scene)
           // self.loadingBar.visible = false
           self.renderer.setAnimationLoop(self.render.bind(self))
+
+          self.chair.position.x = 1
         },
         null,
         // (xhr) => {
