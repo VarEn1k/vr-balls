@@ -26,7 +26,7 @@ class App {
     const ambient = new THREE.HemisphereLight( 0x606060, 0x404040, 1)
     this.scene.add(ambient)
 
-    const light = new THREE.DirectionalLight(0xffffff)
+    const light = new THREE.DirectionalLight(0xfffff)
     // light.position.set(0.2, 1, 1)
     light.position.set( 1, 1, 1 ).normalize()
     this.scene.add(light)
@@ -44,6 +44,7 @@ class App {
 
     // this.initSceneCube()
     this.initScene()
+    this.forDebugOnly()
     this.loadGltf()
     this.setupVR()
 
@@ -72,6 +73,14 @@ class App {
     // sphere.position.set(1.5, 0, 0)
   }
 
+  forDebugOnly() {
+    const geometrySphere = new THREE.SphereGeometry( .5, 32, 16 )
+    const materialSphere = new THREE.MeshBasicMaterial( { color: 0xffff00 } )
+    const sphere = new THREE.Mesh( geometrySphere, materialSphere )
+    sphere.position.set(0, 1.5, -2)
+    this.scene.add( sphere )
+  }
+
   initScene() {
     this.radius = 0.08
 
@@ -84,12 +93,12 @@ class App {
 
     const geometry = new THREE.IcosahedronBufferGeometry(this.radius, 2)
 
-    for (let i = 0; i < 0; i++) {
+    for (let i = 0; i < 50; i++) {
 
       const objects = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff } ))
 
       objects.position.x = this.random(-2, 2)
-      objects.position.y = this.random(-2, 2)
+      objects.position.y = this.random(0, 2)
       objects.position.z = this.random(-2, 2)
 
       this.room.add(objects)
@@ -111,7 +120,8 @@ class App {
           // self.loadingBar.visible = false
           self.renderer.setAnimationLoop(self.render.bind(self))
 
-          self.chair.position.x = 1
+          self.chair.position.x = 1;
+          self.chair.position.y = 1;
         },
         null,
         // (xhr) => {
