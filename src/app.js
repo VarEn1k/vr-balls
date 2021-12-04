@@ -2,6 +2,7 @@ import * as THREE from 'three/build/three.module.js'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import {VRButton} from "three/examples/jsm/webxr/VRButton"
 import {BoxLineGeometry} from "three/examples/jsm/geometries/BoxLineGeometry"
+import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory";
 
 import officeChairGlb from "/assets/Cute Cartoon Character.glb"
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
@@ -137,6 +138,35 @@ class App {
   setupVR() {
     this.renderer.xr.enabled = true
     document.body.appendChild( VRButton.createButton(this.renderer) )
+
+    this.controllers = this.buildControllers()
+  }
+
+  buildControllers() {
+    const controllerModelFactory = new XRControllerModelFactory()
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -1)
+    ])
+    const line = new THREE.Line(geometry)
+    line.name = 'line'
+    line.scale.z = 0
+
+    const controllers = []
+
+  for (let i=0; i < 2; i++) {
+    const controller = this.renderer.xr.getController(0)
+    controller.add(line.clone())
+    controller.userData.selectPressed = false
+    this.scene.add(controller)
+
+    controllers.push(controller)
+
+    const grip = this.renderer.xr.getControllerGrip(0)
+    grip.add(controllerModelFactory.createControllerModel(grip))
+    this.scene.add(grip)
+    }
+    return controllers
   }
 
   resize() {
