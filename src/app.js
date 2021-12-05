@@ -43,6 +43,10 @@ class App {
     this.controls.target.set(0, 1.6, 0)
     this.controls.update()
 
+    this.raycaster = new OrbitControls(this.camera, this.renderer.domElement)
+    this.workingMatrix = new THREE.Matrix4()
+    this.workingVector = new THREE.Vector3()
+
     // this.initSceneCube()
     this.initScene()
     this.forDebugOnly()
@@ -105,7 +109,14 @@ class App {
       this.room.add(objects)
 
     }
+    this.hightlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+      color: 0xFFFFF, side: THREE.BackSide
+    }))
+    this.hightlight.scale.set(1.2, 1.2, 1.2)
+    this.scene.add(this.hightlight)
   }
+
+
 
   loadGltf() {
     const self = this
@@ -140,6 +151,23 @@ class App {
     document.body.appendChild( VRButton.createButton(this.renderer) )
 
     this.controllers = this.buildControllers()
+
+    const self = this
+
+    function onSelectStart(){
+      this.children[0].scale.z = 10
+      this.userData.selectPressed = true
+    }
+
+    function onSelectEnd(){
+      this.children[0].scale.z = 0
+      self.hightlight.visible = false
+      this.userData.selectPressed = false
+    }
+    this.controllers.forEach( (controller) => {
+      controller.addEventListener('selectstart', onSelectStart);
+      controller.addEventListener('selectend', onSelectEnd);
+    });
   }
 
   buildControllers() {
@@ -165,8 +193,36 @@ class App {
     const grip = this.renderer.xr.getControllerGrip(0)
     grip.add(controllerModelFactory.createControllerModel(grip))
     this.scene.add(grip)
+
+    const grip1 = this.renderer.xr.getControllerGrip(1)
+    grip1.add(controllerModelFactory.createControllerModel(grip1))
+    this.scene.add(grip1)
     }
     return controllers
+  }
+
+  handleController(controller) {
+    if (controller.userData.selectPressed) {
+      controller.children[0].scale.z = 10
+      this.workingMatrix.identity().extractRotation( controller.matrixWorld)
+
+      this.raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld)
+
+      this.raycaster.ray.direction.set(0, 0, -1).applyMatrix4(this.workingMatrix)
+
+      const intersects = this.raycaster.intersectObject(this.room.children)
+
+      if (intersects.length > 0) {
+        if (intersects[0].object.uuid !== this.hightlight.uuid) {
+          intersects[0].object.add(this.hightlight)
+        }
+        this.hightlight.visible = true
+        controller.children[0].scale.z = intersects[0].distance
+      } else{
+        this.hightlight.visible = false
+      }
+    }
+
   }
 
   resize() {
@@ -182,6 +238,13 @@ class App {
     }
     this.renderer.render(this.scene, this.camera)
   }
+
+
+
+
+
+
+
 }
 
 export {App}
