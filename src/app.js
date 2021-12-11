@@ -6,6 +6,7 @@ import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerMod
 
 import officeChairGlb from "/assets/Cute Cartoon Character.glb"
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
+import {controllers} from "three/examples/jsm/libs/dat.gui.module";
 
 
 class App {
@@ -43,7 +44,7 @@ class App {
     this.controls.target.set(0, 1.6, 0)
     this.controls.update()
 
-    this.raycaster = new OrbitControls(this.camera, this.renderer.domElement)
+    this.raycaster = new THREE.Raycaster()
     this.workingMatrix = new THREE.Matrix4()
     this.workingVector = new THREE.Vector3()
 
@@ -110,8 +111,7 @@ class App {
 
     }
     this.hightlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-      color: 0xFFFFF, side: THREE.BackSide
-    }))
+      color: 0xFFFFF, side: THREE.BackSide}))
     this.hightlight.scale.set(1.2, 1.2, 1.2)
     this.scene.add(this.hightlight)
   }
@@ -183,20 +183,20 @@ class App {
     const controllers = []
 
   for (let i=0; i < 2; i++) {
-    const controller = this.renderer.xr.getController(0)
+    const controller = this.renderer.xr.getController(i)
     controller.add(line.clone())
     controller.userData.selectPressed = false
     this.scene.add(controller)
 
     controllers.push(controller)
 
-    const grip = this.renderer.xr.getControllerGrip(0)
+    const grip = this.renderer.xr.getControllerGrip(i)
     grip.add(controllerModelFactory.createControllerModel(grip))
     this.scene.add(grip)
 
-    const grip1 = this.renderer.xr.getControllerGrip(1)
-    grip1.add(controllerModelFactory.createControllerModel(grip1))
-    this.scene.add(grip1)
+    // const grip1 = this.renderer.xr.getControllerGrip(1)
+    // grip1.add(controllerModelFactory.createControllerModel(grip1))
+    // this.scene.add(grip1)
     }
     return controllers
   }
@@ -210,19 +210,16 @@ class App {
 
       this.raycaster.ray.direction.set(0, 0, -1).applyMatrix4(this.workingMatrix)
 
-      const intersects = this.raycaster.intersectObject(this.room.children)
+      const intersects = this.raycaster.intersectObjects(this.room.children)
 
       if (intersects.length > 0) {
-        if (intersects[0].object.uuid !== this.hightlight.uuid) {
           intersects[0].object.add(this.hightlight)
-        }
         this.hightlight.visible = true
         controller.children[0].scale.z = intersects[0].distance
-      } else{
+      } else {
         this.hightlight.visible = false
       }
     }
-
   }
 
   resize() {
@@ -236,14 +233,15 @@ class App {
       this.mesh.rotateX(0.005)
       this.mesh.rotateY(0.01)
     }
+    if (this.controllers) {
+      const self = this
+      this.controllers.forEach((controllers) => {
+        self.handleController(controllers)
+      })
+    }
+
     this.renderer.render(this.scene, this.camera)
   }
-
-
-
-
-
-
 
 }
 
