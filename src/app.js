@@ -99,7 +99,7 @@ class App {
 
     const geometry = new THREE.IcosahedronBufferGeometry(this.radius, 2)
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 80; i++) {
 
       const objects = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff } ))
 
@@ -213,7 +213,9 @@ class App {
       const intersects = this.raycaster.intersectObjects(this.room.children)
 
       if (intersects.length > 0) {
+        if (intersects[0].object.uuid != this.hightlight.uuid) {
           intersects[0].object.add(this.hightlight)
+        }
         this.hightlight.visible = true
         controller.children[0].scale.z = intersects[0].distance
       } else {
@@ -239,10 +241,8 @@ class App {
         self.handleController(controllers)
       })
     }
-
     this.renderer.render(this.scene, this.camera)
   }
-
 }
 
 export {App}
