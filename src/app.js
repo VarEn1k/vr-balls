@@ -46,7 +46,10 @@ class App {
 
     this.raycaster = new THREE.Raycaster()
     this.workingMatrix = new THREE.Matrix4()
-    this.workingVector = new THREE.Vector3()
+   // this.workingVector = new THREE.Vector3()
+
+    this.controllers = []
+    this.spotlights = {}
 
     // this.initSceneCube()
     this.initScene()
@@ -110,10 +113,10 @@ class App {
       this.room.add(objects)
 
     }
-    this.hightlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+    this.highlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
       color: 0xFFFFF, side: THREE.BackSide}))
-    this.hightlight.scale.set(1.2, 1.2, 1.2)
-    this.scene.add(this.hightlight)
+    this.highlight.scale.set(1.2, 1.2, 1.2)
+    this.scene.add(this.highlight)
   }
 
 
@@ -150,27 +153,59 @@ class App {
     this.renderer.xr.enabled = true
     document.body.appendChild( VRButton.createButton(this.renderer) )
 
-    this.controllers = this.buildControllers()
-
-    const self = this
-
-    function onSelectStart(){
-      this.children[0].scale.z = 10
-      this.userData.selectPressed = true
-    }
-
-    function onSelectEnd(){
-      this.children[0].scale.z = 0
-      self.hightlight.visible = false
-      this.userData.selectPressed = false
-    }
-    this.controllers.forEach( (controller) => {
-      controller.addEventListener('selectstart', onSelectStart);
-      controller.addEventListener('selectend', onSelectEnd);
-    });
+    let i = 0
+    //this.flashLightController(i++)
+    this.buildStandardController(i++)
+    //this.flashLightController(i++)
+    this.buildStandardController(i++)
   }
 
-  buildControllers() {
+  flashLightController(index) {
+    const self = this
+
+    function onSelectStart() {
+      this.userData.selectPressed = true
+      if (self.spotlights[this.uuid]) {
+        self.spotlights[this.uuid].visible = true
+      } else {
+        this.children[0].scale.z = 10
+      }
+    }
+
+    function onSelectEnd () {
+      self.highlight.visible = false
+      this.userData.selectPressed = false
+      if (self.spotlights[this.uuid]) {
+        self.spotlights[this.uuid].visible = false
+      } else {
+        this.children[0].scale.z = 0
+      }
+    }
+
+    let controller = this.renderer.xr.getController(index)
+    controller.addEventListener( 'selectstart', onSelectStart );
+    controller.addEventListener( 'selectEnd', onSelectEnd );
+    controller.addEventListener( 'connected', function (event) {
+      self.buildFlashLightController.call(self, event.data, this)
+    })
+    controller.addEventListener( 'disconnected', function () {
+      while(this.children.length > 0) {
+        this.remove(this.children[0])
+        const controllerIndex = self.controllers.indexOf(this)
+        self.controllers[controllerIndex] = null
+      }
+    })
+    controller.handle = () => this.handleFlashLightController(controller)
+
+    this.controllers[index] = controller
+    this.scene.add(controller)
+  }
+  buildFlashLightController(data, controller) {
+
+  }
+
+
+  buildStandardController(index) {
     const controllerModelFactory = new XRControllerModelFactory()
     const geometry = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0, 0),
@@ -180,25 +215,35 @@ class App {
     line.name = 'line'
     line.scale.z = 0
 
-    const controllers = []
+    const controller = this.renderer.xr.getController(index)
 
-  for (let i=0; i < 2; i++) {
-    const controller = this.renderer.xr.getController(i)
     controller.add(line.clone())
     controller.userData.selectPressed = false
-    this.scene.add(controller)
 
-    controllers.push(controller)
-
-    const grip = this.renderer.xr.getControllerGrip(i)
+    const grip = this.renderer.xr.getControllerGrip(index)
     grip.add(controllerModelFactory.createControllerModel(grip))
     this.scene.add(grip)
 
-    // const grip1 = this.renderer.xr.getControllerGrip(1)
-    // grip1.add(controllerModelFactory.createControllerModel(grip1))
-    // this.scene.add(grip1)
+    const self = this
+
+    function onSelectStart() {
+      this.children[0].scale.z = 10
+      this.userData.selectPressed = true
+      }
+
+
+    function onSelectEnd () {
+      this.children[0].scale.z = 0
+      self.highlight.visible = false
+      this.userData.selectPressed = false
     }
-    return controllers
+controller.addEventListener('selectstart', onSelectStart);
+    controller.addEventListener('selectEnd', onSelectEnd);
+
+    controller.handle = () => this.handleController(controller)
+
+    this.scene.add(controller)
+    controllers[index] = controller
   }
 
   handleController(controller) {
@@ -213,13 +258,13 @@ class App {
       const intersects = this.raycaster.intersectObjects(this.room.children)
 
       if (intersects.length > 0) {
-        if (intersects[0].object.uuid != this.hightlight.uuid) {
-          intersects[0].object.add(this.hightlight)
+        if (intersects[0].object.uuid != this.highlight.uuid) {
+          intersects[0].object.add(this.highlight)
         }
-        this.hightlight.visible = true
+        this.highlight.visible = true
         controller.children[0].scale.z = intersects[0].distance
       } else {
-        this.hightlight.visible = false
+        this.highlight.visible = false
       }
     }
   }
