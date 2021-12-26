@@ -3,10 +3,11 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import {VRButton} from "three/examples/jsm/webxr/VRButton"
 import {BoxLineGeometry} from "three/examples/jsm/geometries/BoxLineGeometry"
 import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory";
-
+import flashLightPack from "../assets/KatanaForZIP.glb"
 import officeChairGlb from "/assets/Cute Cartoon Character.glb"
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 import {controllers} from "three/examples/jsm/libs/dat.gui.module";
+import {SpotLightVolumetricMaterial} from "./utils/SpotLightVolumetricMaterial";
 
 
 class App {
@@ -28,7 +29,7 @@ class App {
     const ambient = new THREE.HemisphereLight( 0x606060, 0x404040, 1)
     this.scene.add(ambient)
 
-    const light = new THREE.DirectionalLight(0xfffff)
+    const light = new THREE.DirectionalLight(0xffffff)
     // light.position.set(0.2, 1, 1)
     light.position.set( 1, 1, 1 ).normalize()
     this.scene.add(light)
@@ -46,7 +47,7 @@ class App {
 
     this.raycaster = new THREE.Raycaster()
     this.workingMatrix = new THREE.Matrix4()
-   // this.workingVector = new THREE.Vector3()
+    //this.workingVector = new THREE.Vector3()
 
     this.controllers = []
     this.spotlights = {}
@@ -94,7 +95,7 @@ class App {
     this.radius = 0.08
 
     this.room = new THREE.LineSegments(
-        new BoxLineGeometry(6, 6, 6, 10, 10, 10,),
+        new BoxLineGeometry(6, 6, 6, 10, 10, 10),
         new THREE.LineBasicMaterial({color: 0x808080})
     )
     this.room.geometry.translate(0, 3, 0)
@@ -118,8 +119,6 @@ class App {
     this.highlight.scale.set(1.2, 1.2, 1.2)
     this.scene.add(this.highlight)
   }
-
-
 
   loadGltf() {
     const self = this
@@ -156,8 +155,8 @@ class App {
     let i = 0
     //this.flashLightController(i++)
     this.buildStandardController(i++)
-    //this.flashLightController(i++)
-    this.buildStandardController(i++)
+    this.flashLightController(i++)
+    //this.buildStandardController(i++)
   }
 
   flashLightController(index) {
@@ -184,7 +183,7 @@ class App {
 
     let controller = this.renderer.xr.getController(index)
     controller.addEventListener( 'selectstart', onSelectStart );
-    controller.addEventListener( 'selectEnd', onSelectEnd );
+    controller.addEventListener( 'selectend', onSelectEnd );
     controller.addEventListener( 'connected', function (event) {
       self.buildFlashLightController.call(self, event.data, this)
     })
@@ -200,10 +199,48 @@ class App {
     this.controllers[index] = controller
     this.scene.add(controller)
   }
+
   buildFlashLightController(data, controller) {
+    let geometry, material, loader
 
+    const self = this
+
+    if (data.targetRayMode === 'tracked-pointer') {
+      loader = new GLTFLoader()
+          loader.load(flashLightPack, (gltf) => {
+            const flashLight = gltf.scene.children[2]
+            const scale = 0.8
+            flashLight.scale.set(scale, scale, scale)
+            controller.add(flashLight)
+            const spotlightGroup = new THREE.Group()
+            self.spotlights[controller.uuid] = spotlightGroup
+
+            const spotlight = new THREE.SpotLight(0xFFFFFF, 2, 12, Math.PI / 15, 0.3)
+            spotlight.position.set(0, 0, 0)
+            spotlight.target.position.set(0, 0, -1)
+            spotlightGroup.add(spotlight.target)
+            spotlightGroup.add(spotlight)
+            controller.add(spotlightGroup)
+
+            spotlightGroup.visible = false
+
+            geometry = new THREE.CylinderBufferGeometry(0.03, 1, 5, 32, true)
+            geometry.rotateX(Math.PI / 2)
+            material = new SpotLightVolumetricMaterial()
+            const cone = new THREE.Mesh(geometry, material)
+            cone.translateZ(-2.6)
+            spotlightGroup.add(cone)
+      },
+              null,
+              (error) => console.error(`An error happened: ${error}`)
+          )
+
+    } else if (data.targetRayMode == 'gaze'){
+      geometry = new THREE.RingBufferGeometry(0.02, 0.04, 32).translate(0, 0, -1);
+      material = new THREE.MeshBasicMaterial({opacity: 0.5, transparent: true});
+      controller.add(new THREE.Mesh(geometry, material))
+    }
   }
-
 
   buildStandardController(index) {
     const controllerModelFactory = new XRControllerModelFactory()
@@ -238,7 +275,7 @@ class App {
       this.userData.selectPressed = false
     }
 controller.addEventListener('selectstart', onSelectStart);
-    controller.addEventListener('selectEnd', onSelectEnd);
+    controller.addEventListener('selectend', onSelectEnd);
 
     controller.handle = () => this.handleController(controller)
 
@@ -248,7 +285,29 @@ controller.addEventListener('selectstart', onSelectStart);
 
   handleController(controller) {
     if (controller.userData.selectPressed) {
-      controller.children[0].scale.z = 10
+      controller.children[0].scale.z = 0.6
+      this.workingMatrix.identity().extractRotation( controller.matrixWorld)
+
+      this.raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld)
+
+      this.raycaster.ray.direction.set(0, 0, -1).applyMatrix4(this.workingMatrix)
+
+      const intersects = this.raycaster.intersectObjects(this.room.children)
+
+      if (intersects.length > 0) {
+        if (intersects[0].object.uuid !== this.highlight.uuid) {
+          intersects[0].object.add(this.highlight)
+        }
+        this.highlight.visible = true
+        controller.children[0].scale.z = intersects[0].distance
+      } else {
+        this.highlight.visible = false
+      }
+    }
+  }
+
+  handleFlashLightController(controller) {
+    if (controller.userData.selectPressed) {
       this.workingMatrix.identity().extractRotation( controller.matrixWorld)
 
       this.raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld)
@@ -268,6 +327,7 @@ controller.addEventListener('selectstart', onSelectStart);
       }
     }
   }
+
 
   resize() {
     this.camera.aspect = window.innerWidth / window.innerHeight
