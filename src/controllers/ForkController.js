@@ -6,7 +6,7 @@ import forkPack from "../../assets/Fork.glb";
 
 export class ForkController extends Controller {
     spotlights = {}
-
+     
     constructor(renderer, index, scene, movableObjects, highlight) {
         super(renderer, index)
         this.scene = scene
@@ -15,7 +15,10 @@ export class ForkController extends Controller {
         this.build(index)
     }
     build (index) {
+        this.workingMatrix = new THREE.Matrix4()
+
         const self = this
+
         let controller = this.renderer.xr.getController(index)
 
         controller.addEventListener( 'connected', function (event) {
