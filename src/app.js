@@ -186,7 +186,7 @@ class App {
 
     this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight,
         event => this.onConnectedRight(event, self))
-  // this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+  //this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
   }
 
   // buildDragController(index) {
@@ -434,18 +434,6 @@ class App {
     }
   }
 
-  createButtonStates(components) {
-    const buttonStates = {}
-    this.gamepadIndices = components
-    Object.keys(components).forEach(key => {
-      if (key.includes('touchpad') || key.includes('thumbstick')) {
-        buttonStates[key] = { button: 0, xAxis: 0, yAxis: 0 }
-      } else {
-        buttonStates[key] = 0
-      }
-    })
-    this.buttonStates = buttonStates
-  }
 
 
   updateGamepadState() {
@@ -473,29 +461,7 @@ class App {
   }
 
 
-  onConnectedRight( event, self ){
-    const info = {};
 
-    fetchProfile( event.data, DEFAULT_PROFILES_PATH, DEFAULT_PROFILE ).then( ( { profile, assetPath } ) => {
-      console.log( JSON.stringify(profile));
-
-      info.name = profile.profileId;
-      info.targetRayMode = event.data.targetRayMode;
-
-      Object.entries( profile.layouts ).forEach( ( [key, layout] ) => {
-        const components = {};
-        Object.values( layout.components ).forEach( ( component ) => {
-          components[component.rootNodeName] = component.gamepadIndices;
-        });
-        info[key] = components;
-      });
-
-      self.createButtonStates( info.right );
-
-      console.log( JSON.stringify(info) );
-
-    } );
-  }
 
   showDebugText() {
     const dt = this.clock.getDelta()

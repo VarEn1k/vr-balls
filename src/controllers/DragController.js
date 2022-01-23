@@ -1,12 +1,10 @@
-import * as THREE from "three";
 import {Controller} from "./Controller";
+import * as THREE from "three";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
-import {SpotLightVolumetricMaterial} from "../utils/SpotLightVolumetricMaterial";
 import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory";
-import {controllers} from "three/examples/jsm/libs/dat.gui.module";
 
 export class DragController extends Controller {
-    //raycaster = new THREE.Raycaster()
+    raycaster = new THREE.Raycaster()
     spotlights = {}
 
     constructor(renderer, index, scene, movableObjects, highlight) {
@@ -15,6 +13,29 @@ export class DragController extends Controller {
         this.movableObjects = movableObjects
         this.highlight = highlight
         this.build(index)
+    }
+
+    handle() {
+        if (this.controller.userData.selectPressed) {
+            this.controller.children[0].scale.z = 10
+            this.workingMatrix.identity().extractRotation(this.controller.matrixWorld)
+
+            this.raycaster.ray.origin.setFromMatrixPosition(this.controller.matrixWorld)
+
+            this.raycaster.ray.direction.set(0, 0, -1).applyMatrix4(this.workingMatrix)
+
+            const intersects = this.raycaster.intersectObjects(this.room.children)
+
+            if (intersects.length > 0) {
+                if (intersects[0].object.uuid !== this.highlight.uuid) {
+                    intersects[0].object.add(this.highlight)
+                }
+                this.highlight.visible = true
+                this.controller.children[0].scale.z = intersects[0].distance
+            } else {
+                this.highlight.visible = false
+            }
+        }
     }
 
     build(index) {
@@ -29,8 +50,8 @@ export class DragController extends Controller {
 
         const controller = this.renderer.xr.getController(index)
 
-        controller.add(line.clone())
-        controller.userData.selectPressed = false
+        this.controller.add(line)
+        this.controller.userData.selectPressed = false
 
         const grip = this.renderer.xr.getControllerGrip(index)
         grip.add(controllerModelFactory.createControllerModel(grip))
@@ -62,29 +83,30 @@ export class DragController extends Controller {
             }
         }
 
-        controller.addEventListener('selectstart', onSelectStart);
-        controller.addEventListener('selectend', onSelectEnd);
+        this.controller.addEventListener('selectstart', onSelectStart);
+        this.controller.addEventListener('selectend', onSelectEnd);
 
         const tempMatrix = new THREE.Matrix4();
         const rayCaster = new THREE.Raycaster();
         const intersected = [];
 
-        controller.handle = () => {
+        this.controller.handle = () => {
             cleanIntersected();
-            intersectObjects(controller)
+            intersectObjects(this.controller)
         }
-        this.scene.add(controller)
-        controllers[index] = controller
+
+        this.scene.add(this.controller)
 
         function getIntersections(controller) {
 
             tempMatrix.identity().extractRotation(controller.matrixWorld);
 
             rayCaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-            rayCaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+            rayCaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix)
 
             return rayCaster.intersectObjects(self.movableObjects.children);
         }
+
 
         function intersectObjects(controller) {
             if (controller.userData.selected !== undefined) return;
@@ -98,12 +120,12 @@ export class DragController extends Controller {
                 const object = intersection.object;
                 object.material.emissive.r = 1;
                 intersected.push(object);
-
                 line.scale.z = intersection.distance;
             } else {
                 line.scale.z = 5;
             }
         }
+
 
         function cleanIntersected() {
             while (intersected.length) {
