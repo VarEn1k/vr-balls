@@ -16,9 +16,6 @@ import {DragController} from "./controllers/DragController";
 import {CanvasUI} from "./utils/CanvasUI";
 import {fetchProfile} from "three/examples/jsm/libs/motion-controllers.module";
 
-const DEFAULT_PROFILES_PATH = 'webxr-input-profiles';
-const DEFAULT_PROFILE = 'generic-trigger';
-
 
 class App {
   constructor() {
@@ -171,6 +168,8 @@ class App {
     document.body.appendChild( VRButton.createButton(this.renderer) )
     const self = this
     let i = 0
+    this.controllers[i] = new StandardController(this.renderer, i++, this.scene,
+        this.movableObjects, this.highlight)
     //this.buildDragController(i++)
     // this.forkController(i++)
     //this.buildStandardController(i++)
@@ -184,9 +183,8 @@ class App {
     //this.controllers[i] = new DragController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
     //this.controllers[i] = new DragController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
 
-    this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight,
-        event => this.onConnectedRight(event, self))
-  //this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+    this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+    this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
   }
 
   // buildDragController(index) {
@@ -420,13 +418,12 @@ class App {
     return ui;
   }
 
-
-  updateUI(){
-    if (!this.buttonStates) {
+  updateUI(buttonStates){
+    if (!buttonStates) {
       return
     }
 
-    const str = JSON.stringify( this.buttonStates, null, 2);
+    const str = JSON.stringify(buttonStates, null, 2);
     if (this.strStates === undefined || ( str != this.strStates )){
       this.ui.updateElement( 'body', str );
       this.ui.update();
@@ -434,51 +431,17 @@ class App {
     }
   }
 
-
-
-  updateGamepadState() {
-    const session = this.renderer.xr.getSession()
-    const inputSource = session.inputSources[0]
-    if (inputSource && inputSource.gamepad && this.gamepadIndices && this.buttonStates) {
-      const gamepad = inputSource.gamepad
-      try {
-        Object.entries(this.buttonStates).forEach(([key, value]) => {
-          const buttonIndex = this.gamepadIndices[key].button
-          if (key.includes('touchpad') || key.includes('thumbstick')) {
-            const xAxisIndex = this.gamepadIndices[key].xAxis
-            const yAxisIndex = this.gamepadIndices[key].yAxis
-            this.buttonStates[key].button = gamepad.buttons[buttonIndex].value
-            this.buttonStates[key].xAxis = gamepad.axes[xAxisIndex].toFixed(2)
-            this.buttonStates[key].yAxis = gamepad.axes[yAxisIndex].toFixed(2)
-          } else {
-            this.buttonStates[key] = gamepad.buttons[buttonIndex].value
-          }
-        })
-      } catch (e) {
-        console.warn("An error occurred setting the ui")
-      }
-    }
-  }
-
-
-
-
   showDebugText() {
     const dt = this.clock.getDelta()
 
     if (this.renderer.xr.isPresenting) {
-      const self = this
-      if (this.controllers) {
-        this.controllers.forEach(controller => controller.handle())
-      }
-      if (this.elapsedTime == undefined) {
+      if(this.elapsedTime === undefined) {
         this.elapsedTime = 0
       }
       this.elapsedTime += dt
       if (this.elapsedTime > 0.3) {
-        this.updateGamepadState()
         this.elapsedTime = 0
-        this.updateUI()
+        this.updateUI(this.controllers[0].buttonStates)
       }
     } else {
       // this.stats.update()
