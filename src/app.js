@@ -5,7 +5,8 @@ import {BoxLineGeometry} from "three/examples/jsm/geometries/BoxLineGeometry"
 import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory";
 import forkPack from "../assets/Fork.glb"
 import flashLightPack from "../assets/flash-light.glb"
-import officeChairGlb from "/assets/Beach_Scene.glb"
+import lolGlb from "/assets/Beach_Scene.glb"
+import balloon from "/assets/Steampunk_Dirigible_with_Ship.glb"
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 import {controllers} from "three/examples/jsm/libs/dat.gui.module";
 import {SpotLightVolumetricMaterial} from "./utils/SpotLightVolumetricMaterial";
@@ -133,13 +134,34 @@ class App {
     this.scene.add(this.highlight)
 
     this.ui = this.createUI()
+
+    this.loadAsset(balloon, .5, .5, 1, scene => {
+      const self = this
+      const scale = 1
+      scene.scale.set(scale, scale, scale)
+      self.balloon = scene
+    })
   }
+
+loadAsset(glbObject, x, y, z, sceneHandler) {
+  const self = this
+  const loader = new GLTFLoader()
+  loader.load(glbObject, (gltf) => {
+        const scene = gltf.scene
+        self.scene.add(scene)
+        scene.position.set(3, 3, 0)
+        sceneHandler(scene)
+      },
+      null,
+      (error) => console.error(`An error happened: ${error}`)
+  )
+}
 
   loadGltf() {
     const self = this
     const loader = new GLTFLoader()
     loader.load(
-        officeChairGlb,
+        lolGlb,
         (gltf) => {
           self.chair = gltf.scene
           self.chair.scale.set(.3,.3,.3)
@@ -466,6 +488,42 @@ class App {
       //   self.handleController(controllers)
       // })
       this.controllers.forEach(controller => controller.handle())
+    }
+
+    if (this.renderer.xr.isPresenting
+        && this.balloon
+        && this.controllers.length > 0
+        && this.controllers[0].buttonStates
+    ) {
+      if(this.controllers[0]
+              .buttonStates["xr_standard_thumbstick"].button) {
+        this.balloon.rotateY(Math.PI / 180/10)
+        const scale = 3
+        this.balloon.scale.set(scale, scale, scale)
+      } else {
+        const scale = 1
+        this.balloon.scale.set(scale, scale, scale)
+      }
+      const xAxis = this.controllers[0].buttonStates["xr_standard_thumbstick"].xAxis
+      this.balloon.rotateX(Math.PI / 180 * xAxis * 10)
+      const yAxis = this.controllers[0].buttonStates["xr_standard_thumbstick"].yAxis
+      this.balloon.rotateY(Math.PI / 180 * yAxis * 10)
+    }
+
+    if (this.renderer.xr.isPresenting
+        && this.balloon
+        && this.controllers.length > 0
+        && this.controllers[1].buttonStates
+    ) {
+      const buttonStates = this.controllers[1].buttonStates
+      if(buttonStates["xr_standard_thumbstick"].button) {
+        this.balloon.rotateY(Math.PI / 180/10)
+        const scale = 3
+        this.balloon.scale.set(scale, scale, scale)
+      } else {
+        const scale = 1
+        this.balloon.scale.set(scale, scale, scale)
+      }
     }
 
     this.showDebugText()
