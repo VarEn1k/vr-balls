@@ -133,7 +133,6 @@ class App {
     this.highlight.scale.set(1.2, 1.2, 1.2)
     this.scene.add(this.highlight)
 
-    this.ui = this.createUI()
 
     this.loadAsset(balloon, .5, .5, 1, scene => {
       const self = this
@@ -207,6 +206,15 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
 
     this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
     this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+
+    if (this.controllers.length > 1){
+      this.leftUi = this.createUI()
+      this.leftUi.mesh.position.set(1, 1.5, -1)
+      this.rightUi = this.createUI()
+      this.rightUi.mesh.position.set(-.6, 1.5, -1)
+    } else{
+      this.leftUi = this.createUI()
+    }
   }
 
   // buildDragController(index) {
@@ -426,6 +434,7 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
 //       }
 //     }
 //   }
+  ;
 
 
   createUI(){
@@ -440,18 +449,23 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     return ui;
   }
 
-  updateUI(buttonStates){
+  updateUI(ui, buttonStates){
     if (!buttonStates) {
       return
     }
 
     const str = JSON.stringify(buttonStates, null, 2);
-    if (this.strStates === undefined || ( str != this.strStates )){
-      this.ui.updateElement( 'body', str );
-      this.ui.update();
+    if (!ui.userData || ui.userData.strStates === undefined
+    || ( str != ui.userData.strStates)){
+      ui.updateElement('body', str);
+      ui.update();
+      if (!ui.userData) {
+       ui.userData = {}
+      }
       this.strStates = str;
     }
   }
+
 
   showDebugText() {
     const dt = this.clock.getDelta()
@@ -463,10 +477,13 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
       this.elapsedTime += dt
       if (this.elapsedTime > 0.3) {
         this.elapsedTime = 0
-        this.updateUI(this.controllers[0].buttonStates)
+        if (this.controllers.length > 0)
+        this.updateUI(this.leftUi,this.controllers[0].buttonStates)
       }
+      if (this.controllers.length > 1)
+        this.updateUI(this.rightUi,this.controllers[1].buttonStates)
     } else {
-      // this.stats.update()
+      //this.stats.update()
     }
   }
 
