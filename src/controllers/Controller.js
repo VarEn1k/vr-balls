@@ -10,18 +10,18 @@ export class Controller {
   renderer
   buttonStates
 
-  constructor(renderer, index) {
+  constructor(renderer, index, ) {
     if (!renderer) {
       throw Error("Invalid renderer value: " + inspect(renderer))
     }
-    this.index = index
     this.renderer = renderer
+    this.index = index
     this.controller = this.renderer.xr.getController(index)
     this.elapsedTime = 0
     this.clock = new THREE.Clock()
 
     const self = this
-    this.controller.addEventListener('connected', event => this.onConnect(event, self))
+    this.controller.addEventListener('connected', (event, data) => this.onConnect(event, self))
   }
 
   handle() {
@@ -112,12 +112,14 @@ export class Controller {
             });
             info[key] = components;
           });
+
           if (event.data.handedness === 'left') {
             self.createButtonStates(info.left);
           } else {
-          self.createButtonStates(info.right);
-        }
+            self.createButtonStates(info.right);
+          }
+
           // console.log( JSON.stringify(info) );
-     });
+        });
   }
 }

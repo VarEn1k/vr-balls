@@ -8,11 +8,12 @@ export class FlashLightController extends Controller {
   raycaster = new THREE.Raycaster()
   spotlights = {}
 
-  constructor(renderer, index, scene, movableObjects, highlight) {
+  constructor(renderer, index, scene, movableObjects, highlight, dolly) {
     super(renderer, index)
     this.scene = scene
     this.movableObjects = movableObjects
     this.highlight = highlight
+      this.dolly = dolly
     this.build(index)
   }
 
@@ -107,6 +108,8 @@ export class FlashLightController extends Controller {
             const cone = new THREE.Mesh(geometry, material)
             cone.translateZ(-2.6)
             spotlightGroup.add(cone)
+
+            this.dolly.add(controller)
           },
           null,
           (error) => console.error(`An error happened: ${error}`)

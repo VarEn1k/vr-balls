@@ -62,6 +62,7 @@ class App {
 
     //this.initSceneCube()
     this.initScene()
+    this.initBoxes()
     this.forDebugOnly()
     this.loadGltf()
     this.setupVR()
@@ -93,6 +94,7 @@ class App {
     // sphere.position.set(1.5, 0, 0)
   }
 
+
   forDebugOnly() {
     const geometrySphere = new THREE.SphereGeometry( .5, 32, 16 )
     const materialSphere = new THREE.MeshBasicMaterial( { color: 0xffff00 } )
@@ -100,6 +102,7 @@ class App {
     sphere.position.set(0, 1.5, -2)
     this.scene.add( sphere )
   }
+
 
   initScene() {
     this.radius = 0.08
@@ -128,6 +131,7 @@ class App {
       this.movableObjects.add(object)
     }
 
+
     this.highlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
       color: 0xFFFFF, side: THREE.BackSide}))
     this.highlight.scale.set(1.2, 1.2, 1.2)
@@ -140,6 +144,45 @@ class App {
       scene.scale.set(scale, scale, scale)
       self.balloon = scene
     })
+  }
+
+
+  initBoxes() {
+    this.scene.background = new THREE.Color(0xA0A0A0)
+    this.scene.fog = new THREE.Fog(0xA0A0A0, 50,100)
+    // ground
+    const ground = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(200, 200),
+        new THREE.MeshPhongMaterial({color: 0x999999, depthWrite: false}))
+    ground.rotation.x = -Math.PI / 2
+    this.scene.add(ground)
+
+    var grid = new THREE.GridHelper(100, 40, 0x000000, 0x000000)
+    grid.material.opacity = 0.2
+    grid.material.transparent = true
+    this.scene.add(grid)
+
+    const geometry = new THREE.BoxGeometry(5,5,5)
+    const material = new THREE.MeshPhongMaterial({color: 0xAAAA22})
+    const edges = new THREE.EdgesGeometry(geometry)
+    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: 0x000000, linewidth: 2}))
+
+    this.colliders = []
+
+    for (let x=-100; x < 100; x += 10) {
+      for (let z=-100; z < 100; z += 10) {
+        if (x == 0 && z == 0) {
+          continue
+        }
+        const box = new THREE.Mesh(geometry, material)
+        box.position.set(x, 2.5, z)
+        const edge = line.clone()
+        edge.position.copy(box.position)
+        this.scene.add(box)
+        this.scene.add(edge)
+        this.colliders.push(box)
+      }
+    }
   }
 
 loadAsset(glbObject, x, y, z, sceneHandler) {
@@ -191,12 +234,17 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     let i = 0
     this.controllers[i] = new StandardController(this.renderer, i++, this.scene,
         this.movableObjects, this.highlight)
-    //this.buildDragController(i++)
-    // this.forkController(i++)
-    //this.buildStandardController(i++)
-    // this.flashLightController(i++)
-    //this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
-    //this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+
+    this.dolly = new THREE.Object3D();
+    this.dolly.position.z = 0;
+    this.dolly.add( this.camera );
+    this.scene.add( this.dolly );
+
+    this.dummyCam = new THREE.Object3D();
+    this.camera.add( this.dummyCam );
+
+    this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+    this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight, this.dolly)
 
     //this.controllers[i] = new ForkController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
     //this.controllers[i] = new ForkController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
@@ -204,8 +252,9 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     //this.controllers[i] = new DragController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
     //this.controllers[i] = new DragController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
 
-    this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
-    this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+    //this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
+    //this.controllers[i] = new StandardController(this.renderer, i++, this.scene, this.movableObjects, this.highlight, this.dolly)
+
 
     if (this.controllers.length > 1){
       this.leftUi = this.createUI()
@@ -215,6 +264,7 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     } else{
       this.leftUi = this.createUI()
     }
+
   }
 
   // buildDragController(index) {
@@ -469,7 +519,6 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
 
   showDebugText() {
     const dt = this.clock.getDelta()
-
     if (this.renderer.xr.isPresenting) {
       if(this.elapsedTime === undefined) {
         this.elapsedTime = 0
@@ -495,15 +544,35 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
   }
 
   render() {
+    const dt = this.clock.getDelta()
     if (this.mesh) {
       this.mesh.rotateX(0.005)
       this.mesh.rotateY(0.01)
     }
     if (this.controllers) {
+
+      if (this.renderer.xr.isPresenting && this.controllers) {
+        this.controllers.forEach(controller => controller.handle())
+      }
+
+      if (this.controllers.length > 0 && this.controllers[0].buttonStates) {
+        if (this.controllers[0].buttonStates["xr_standard_trigger"]) {
+          const speed = 2.5
+          const quaternion = this.dolly.quaternion.clone()
+          let worldQuaternion = new THREE.Quaternion()
+          this.dummyCam.getWorldQuaternion(worldQuaternion)
+          this.dolly.quaternion.copy(worldQuaternion)
+          this.dolly.translateZ(-dt * speed)
+          this.dolly.position.y = 0
+          this.dolly.quaternion.copy(quaternion)
+        }
+        this.showDebugText(dt)
+
+        this.renderer.render(this.scene, this.camera)
+      }
+
       const self = this
-      // this.controllers.forEach((controllers) => {
-      //   self.handleController(controllers)
-      // })
+
       this.controllers.forEach(controller => controller.handle())
     }
 

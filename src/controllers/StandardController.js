@@ -9,11 +9,12 @@ export class StandardController extends Controller {
     raycaster = new THREE.Raycaster()
     spotlights = {}
 
-    constructor(renderer, index, scene, movableObjects, highlight) {
+    constructor(renderer, index, scene, movableObjects, highlight, dolly) {
         super(renderer, index)
         this.scene = scene
         this.movableObjects = movableObjects
         this.highlight = highlight
+        this.dolly = dolly
 
         this.build(index)
     }
@@ -53,6 +54,7 @@ export class StandardController extends Controller {
         this.controller.addEventListener('selectend', onSelectEnd);
 
         this.scene.add(this.controller)
+
     }
 
     handle(){
