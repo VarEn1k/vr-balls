@@ -55,7 +55,7 @@ class App {
 
     this.raycaster = new THREE.Raycaster()
     this.workingMatrix = new THREE.Matrix4()
-    //this.workingVector = new THREE.Vector3()
+    this.workingVector = new THREE.Vector3()
 
     this.controllers = []
     this.spotlights = {}
@@ -232,8 +232,6 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     document.body.appendChild( VRButton.createButton(this.renderer) )
     const self = this
     let i = 0
-    this.controllers[i] = new StandardController(this.renderer, i++, this.scene,
-        this.movableObjects, this.highlight)
 
     this.dolly = new THREE.Object3D();
     this.dolly.position.z = 0;
@@ -243,9 +241,10 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     this.dummyCam = new THREE.Object3D();
     this.camera.add( this.dummyCam );
 
-    this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
     this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight, this.dolly)
-
+    this.controllers[i] = new FlashLightController(this.renderer, i++, this.scene, this.movableObjects, this.highlight, this.dolly)
+    // this.controllers[i] = new StandardController(this.renderer, i++, this.scene,
+    //     this.movableObjects, this.highlight)
     //this.controllers[i] = new ForkController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
     //this.controllers[i] = new ForkController(this.renderer, i++, this.scene, this.movableObjects, this.highlight)
 
@@ -265,226 +264,7 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
       this.leftUi = this.createUI()
     }
 
-  }
-
-  // buildDragController(index) {
-  //   const controllerModelFactory = new XRControllerModelFactory()
-  //   const geometry = new THREE.BufferGeometry().setFromPoints([
-  //     new THREE.Vector3(0, 0, 0),
-  //     new THREE.Vector3(0, 0, -1)
-  //   ])
-  //   const line = new THREE.Line(geometry)
-  //   line.name = 'line'
-  //   line.scale.z = 10
-  //
-  //   const controller = this.renderer.xr.getController(index)
-  //
-  //   controller.add(line.clone())
-  //   controller.userData.selectPressed = false
-  //
-  //   const grip = this.renderer.xr.getControllerGrip(index)
-  //   grip.add(controllerModelFactory.createControllerModel(grip))
-  //   this.scene.add(grip)
-  //
-  //   const self = this
-  //
-  //   function onSelectStart(event) {
-  //     const controller = event.target;
-  //     const intersections = getIntersections(controller);
-  //
-  //     if (intersections.length > 0 ){
-  //       const intersection = intersections[0];
-  //       const object = intersection.object;
-  //       object.material.emissive.b = 1;
-  //       controller.attach(object);
-  //       controller.userData.selected = object;
-  //     }
-  //   }
-  //
-  //   function onSelectEnd (event) {
-  //     const controller = event.target;
-  //
-  //     if (controller.userData.selected !== undefined) {
-  //       const object = controller.userData.selected;
-  //       object.material.emissive.b = 0;
-  //       self.movableObjects.attach(object);
-  //       controller.userData.selected = undefined;
-  //     }
-  //   }
-  //   controller.addEventListener('selectstart', onSelectStart);
-  //   controller.addEventListener('selectend', onSelectEnd);
-  //
-  //   const tempMatrix = new THREE.Matrix4();
-  //   const rayCaster = new THREE.Raycaster();
-  //   const intersected = [];
-  //
-  //   controller.handle = () => {
-  //     cleanIntersected();
-  //     intersectObjects(controller)
-  //   }
-  //   this.scene.add(controller)
-  //   controllers[index] = controller
-  //
-  //   function getIntersections(controller) {
-  //
-  //     tempMatrix.identity().extractRotation(controller.matrixWorld);
-  //
-  //     rayCaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-  //     rayCaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-  //
-  //     return rayCaster.intersectObjects(self.movableObjects.children);
-  //   }
-  //   function intersectObjects(controller){
-  //     if (controller.userData.selected !== undefined) return;
-  //
-  //     const line = controller.getObjectByName('line');
-  //     const intersections = getIntersections(controller);
-  //
-  //     if (intersections.length > 0){
-  //       const intersection = intersections[0];
-  //
-  //       const object = intersection.object;
-  //       object.material.emissive.r = 1;
-  //       intersected.push(object);
-  //
-  //       line.scale.z = intersection.distance;
-  //     } else {
-  //       line.scale.z = 5;
-  //     }
-  //   }
-  //
-  //   function cleanIntersected() {
-  //     while (intersected.length) {
-  //       const object = intersected.pop();
-  //       object.material.emissive.r = 0;
-  //     }
-  //   }
-  // }
-
-  // forkController(index) {
-  //   const self = this
-  //   let controller = this.renderer.xr.getController(index)
-  //
-  //   controller.addEventListener( 'connected', function (event) {
-  //     self.buildForkController.call(self, event.data, this)
-  //   })
-  //
-  //   controller.addEventListener( 'disconnected', function () {
-  //     while(this.children.length > 0) {
-  //       this.remove(this.children[0])
-  //       const controllerIndex = self.controllers.indexOf(this)
-  //       self.controllers[controllerIndex] = null
-  //     }
-  //   })
-  //   controller.handle = () => {}
-  //
-  //   this.controllers[index] = controller
-  //   this.scene.add(controller)
-  // }
-  //
-  // buildForkController(data, controller) {
-  //   let geometry, material, loader
-  //
-  //   const self = this
-  //
-  //   if (data.targetRayMode === 'tracked-pointer') {
-  //     loader = new GLTFLoader()
-  //     loader.load(forkPack, (gltf) => {
-  //       const fork = gltf.scene
-  //       const scale = 0.05
-  //       fork.scale.set(scale, scale, scale)
-  //       fork.rotation.set(0, Math.PI / -180 * 90 , 0)
-  //       controller.add(fork)
-  //       const spotlightGroup = new THREE.Group()
-  //       self.spotlights[controller.uuid] = spotlightGroup
-  //
-  //       const spotlight = new THREE.SpotLight(0xFFFFFF, 2, 12, Math.PI / 15, 0.3)
-  //       spotlight.position.set(0, 0, 0)
-  //       spotlight.target.position.set(0, 0, -1)
-  //       spotlightGroup.add(spotlight.target)
-  //       spotlightGroup.add(spotlight)
-  //       controller.add(spotlightGroup)
-  //
-  //       spotlightGroup.visible = false
-  //
-  //       geometry = new THREE.CylinderBufferGeometry(0.03, 1, 5, 32, true)
-  //       geometry.rotateX(Math.PI / 2)
-  //       material = new SpotLightVolumetricMaterial()
-  //       const cone = new THREE.Mesh(geometry, material)
-  //       cone.translateZ(-2.6)
-  //       spotlightGroup.add(cone)
-  //
-  //   }, null,
-  //         (error) => console.error(`An error happened: ${error}`)
-  //     )
-  //  }
-  // }
-
-
-//   buildStandardController(index) {
-//     const controllerModelFactory = new XRControllerModelFactory()
-//     const geometry = new THREE.BufferGeometry().setFromPoints([
-//       new THREE.Vector3(0, 0, 0),
-//       new THREE.Vector3(0, 0, -1)
-//     ])
-//     const line = new THREE.Line(geometry)
-//     line.name = 'line'
-//     line.scale.z = 0
-//
-//     const controller = this.renderer.xr.getController(index)
-//
-//     controller.add(line.clone())
-//     controller.userData.selectPressed = false
-//
-//     const grip = this.renderer.xr.getControllerGrip(index)
-//     grip.add(controllerModelFactory.createControllerModel(grip))
-//     this.scene.add(grip)
-//
-//     const self = this
-//
-//     function onSelectStart() {
-//       this.children[0].scale.z = 10
-//       this.userData.selectPressed = true
-//       }
-//
-//
-//     function onSelectEnd () {
-//       this.children[0].scale.z = 0
-//       self.highlight.visible = false
-//       this.userData.selectPressed = false
-//     }
-// controller.addEventListener('selectstart', onSelectStart);
-//     controller.addEventListener('selectend', onSelectEnd);
-//
-//     controller.handle = () => this.handleController(controller)
-//
-//     this.scene.add(controller)
-//     controllers[index] = controller
-//   }
-//
-//   handleController(controller) {
-//     if (controller.userData.selectPressed) {
-//       controller.children[0].scale.z = 0.6
-//       this.workingMatrix.identity().extractRotation( controller.matrixWorld)
-//
-//       this.raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld)
-//
-//       this.raycaster.ray.direction.set(0, 0, -1).applyMatrix4(this.workingMatrix)
-//
-//       const intersects = this.raycaster.intersectObjects(this.room.children)
-//
-//       if (intersects.length > 0) {
-//         if (intersects[0].object.uuid !== this.highlight.uuid) {
-//           intersects[0].object.add(this.highlight)
-//         }
-//         this.highlight.visible = true
-//         controller.children[0].scale.z = intersects[0].distance
-//       } else {
-//         this.highlight.visible = false
-//       }
-//     }
-//   }
-  ;
+  };
 
 
   createUI(){
@@ -543,6 +323,55 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
     this.renderer.setSize(window.innerWidth, window.innerHeight)
   }
 
+  controllerAction(dt) {
+    if (!this.renderer.xr.isPresenting && this.controllers.length === 0) {
+      return
+    }
+    if(this.balloon && this.controllers[0].buttonStates){
+      const buttonStates = this.controllers[0].buttonStates
+      if (buttonStates["xr_standard_thumbstick"].button){
+        const scale = 10
+        this.balloon.scale.set(scale, scale, scale)
+      } else if (this.balloon) {
+        const scale = 5
+        this.balloon.scale.set(scale, scale, scale)
+      }
+      const xAxis = this.controllers[0].buttonStates["xr_standard_thumbstick"].xAxis
+      const yAxis = this.controllers[0].buttonStates["xr_standard_thumbstick"].yAxis
+      this.balloon.rotateY(0.1 * xAxis)
+      this.balloon.translateZ(.02 * yAxis)
+    }
+    if (this.controllers[0].buttonStates && this.controllers[0]
+        .buttonStates["xr_standard_trigger"]
+    ) {
+      const wallLimit = 1.3
+      let pos = this.dolly.position.clone()
+      pos.y += 1
+
+      const speed = 2
+      const quaternion = this.dolly.quaternion.clone()
+      let worldQuaternion = new THREE.Quaternion()
+      this.dummyCam.getWorldQuaternion(worldQuaternion)
+      this.dolly.quaternion.copy(worldQuaternion)
+      this.dolly.translateZ(-dt * speed)
+      this.dolly.position.y = 0
+      this.dolly.quaternion.copy(quaternion)
+
+      this.dolly.getWorldDirection(this.workingVector)
+      this.workingVector.negate()
+
+      this.raycaster.set(pos, this.workingVector)
+      const intersect = this.raycaster.intersectObjects(this.colliders)
+      if (intersect.length > 0 && intersect[0].distance < wallLimit) {
+      this.dolly.translateZ(dt * speed * 10)
+    } else {
+      this.dolly.translateZ(-dt * speed)
+    }
+    this.dolly.position.y = 0
+    this.dolly.quaternion.copy(quaternion)
+  }
+}
+
   render() {
     const dt = this.clock.getDelta()
     if (this.mesh) {
@@ -555,26 +384,24 @@ loadAsset(glbObject, x, y, z, sceneHandler) {
         this.controllers.forEach(controller => controller.handle())
       }
 
-      if (this.controllers.length > 0 && this.controllers[0].buttonStates) {
-        if (this.controllers[0].buttonStates["xr_standard_trigger"]) {
-          const speed = 2.5
-          const quaternion = this.dolly.quaternion.clone()
-          let worldQuaternion = new THREE.Quaternion()
-          this.dummyCam.getWorldQuaternion(worldQuaternion)
-          this.dolly.quaternion.copy(worldQuaternion)
-          this.dolly.translateZ(-dt * speed)
-          this.dolly.position.y = 0
-          this.dolly.quaternion.copy(quaternion)
-        }
-        this.showDebugText(dt)
+    // if (this.controllers.length > 0 && this.controllers[0].buttonStates) {
+    //   if (this.controllers[0].buttonStates["xr_standard_trigger"]) {
+    //     const speed = 2
+    //     const quaternion = this.dolly.quaternion.clone()
+    //     let worldQuaternion = new THREE.Quaternion()
+    //     this.dummyCam.getWorldQuaternion(worldQuaternion)
+    //     this.dolly.quaternion.copy(worldQuaternion)
+    //     this.dolly.translateZ(-dt * speed)
+    //     this.dolly.position.y = 0
+    //     this.dolly.quaternion.copy(quaternion)
+    //   }
+    this.showDebugText(dt)
 
-        this.renderer.render(this.scene, this.camera)
-      }
-
-      const self = this
-
-      this.controllers.forEach(controller => controller.handle())
+    this.controllerAction(dt)
     }
+    this.renderer.render(this.scene, this.camera)
+
+    const self = this
 
     if (this.renderer.xr.isPresenting
         && this.balloon

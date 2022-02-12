@@ -13,7 +13,7 @@ export class FlashLightController extends Controller {
     this.scene = scene
     this.movableObjects = movableObjects
     this.highlight = highlight
-      this.dolly = dolly
+    this.dolly = dolly
     this.build(index)
   }
 
@@ -36,7 +36,7 @@ export class FlashLightController extends Controller {
       this.userData.selectPressed = false
       if (self.spotlights[this.uuid]) {
         self.spotlights[this.uuid].visible = false
-      } else {
+      } else if (this.children[0]) {
         this.children[0].scale.z = 0
       }
     }
@@ -57,6 +57,7 @@ export class FlashLightController extends Controller {
   }
 
   handle() {
+      super.handle()
     if (this.controller.userData.selectPressed) {
       this.workingMatrix.identity().extractRotation(this.controller.matrixWorld)
 
