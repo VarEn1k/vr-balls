@@ -16,7 +16,7 @@ import {ForkController} from "./controllers/ForkController";
 import {DragController} from "./controllers/DragController";
 import {CanvasUI} from "./utils/CanvasUI";
 import {fetchProfile} from "three/examples/jsm/libs/motion-controllers.module";
-
+import rock from "/assets/maxresdefault.jpg"
 
 class App {
   constructor() {
@@ -162,8 +162,10 @@ class App {
     grid.material.transparent = true
     this.scene.add(grid)
 
-    const geometry = new THREE.BoxGeometry(5,5,5)
-    const material = new THREE.MeshPhongMaterial({color: 0xAAAA22})
+    const geometry = new THREE.BoxGeometry(5,4,5)
+    const texture = new THREE.TextureLoader().load(rock)
+    const material = new THREE.MeshPhongMaterial({map: texture})
+
     const edges = new THREE.EdgesGeometry(geometry)
     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: 0x000000, linewidth: 2}))
 
